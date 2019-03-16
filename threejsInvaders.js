@@ -25,9 +25,10 @@ animateRobot = true;
 // MOUSE
 var mouse = new THREE.Vector2(), INTERSECTED, CLICKED;
 
-var duration = 2000; // ms
+var duration = 1500; // ms
 var currentTime = Date.now();
 var actualTime = Date.now();
+var startedTime = Date.now();
 
 var deadTime;
 
@@ -36,6 +37,8 @@ var robots = [];
 var clonar = 6;
 
 var animation = "run";
+
+var score = 0; 
 
 function changeAnimation(animation_text)
 {
@@ -124,7 +127,7 @@ function animate() {
             if(robot_i.live != false && robot_i.deadTime == null)
             {
                 robot_i.mixer.update(deltat * 0.001);
-                robot_i.position.x += 0.3;
+                robot_i.position.x += 0.2;
             }
             else {
                 nowTime = Date.now();
@@ -134,16 +137,21 @@ function animate() {
 
                     robot_i.deadTime = null;
                     robot_i.live = true;
-                    console.log("muere")
+                    robot_i.dead = true;
                     scene.remove(robot_i)
                     robots_in_scene--;
+                    score ++;
+                    document.getElementById("score").innerHTML = "score: " + score;
 
                 }
 
             }      
 
-            if (robot_i.position.x >= 100){
+            if (robot_i.position.x >= 100 && robot_i.dead != true){
 
+                score --;
+                if (score <= 0){score = 0}
+                document.getElementById("score").innerHTML = "score: " + score;
                 robot_i.position.x = -100;                
             }
         }
@@ -160,8 +168,28 @@ function run()
 
         // Update the animations
         KF.update();
-        animate();
 
+        NowTime = Date.now();
+
+        elapsedTime = (NowTime - startedTime)/1000
+
+        document.getElementById("timer").innerHTML = 20 - elapsedTime
+
+        if(document.getElementById("timer").innerHTML > 0){
+
+
+            animate();
+
+        }
+        else {
+
+            startedTime = Date.now();
+
+            score = -1;
+            now = Date.now();
+            currentTime = Date.now();
+            actualTime = Date.now();
+        }
         // Update the camera controller
         //orbitControls.update();
 }
@@ -229,7 +257,6 @@ function createScene(canvas)
     // Raycast
     raycaster = new THREE.Raycaster();
 
-    document.addEventListener( 'mousemove', onDocumentMouseMove );
     document.addEventListener('mousedown', onDocumentMouseDown);
     window.addEventListener( 'resize', onWindowResize);
 
@@ -242,39 +269,6 @@ function onWindowResize()
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
-}
-
-function onDocumentMouseMove( event ) 
-{
-    event.preventDefault();
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-    // find intersections
-    raycaster.setFromCamera( mouse, camera );
-
-    var intersects = raycaster.intersectObjects( robots, true );
-
-    if ( intersects.length > 0 ) 
-    {
-        if ( INTERSECTED != intersects[ 0 ].object ) 
-        {
-            if ( INTERSECTED )
-                INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-
-            INTERSECTED = intersects[ 0 ].object;
-            INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-            INTERSECTED.material.emissive.setHex( 0x000000 );
-   
-        }
-    } 
-    else 
-    {
-        if ( INTERSECTED ) 
-            INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-
-        INTERSECTED = null;
-    }
 }
 
 function onDocumentMouseDown(event)
@@ -297,10 +291,10 @@ function onDocumentMouseDown(event)
         {
             for(var i = 0; i<= animator.interps.length -1; i++)
             {
-                console.log("name", CLICKED.parent.name)
                 animator.interps[i].target = robots[CLICKED.parent.name].rotation;
                 robots[CLICKED.parent.name].live = false;
                 robots[CLICKED.parent.name].deadTime = Date.now();
+                console.log(robots[CLICKED.parent.name])
 
             }
             
